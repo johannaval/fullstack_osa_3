@@ -1,13 +1,18 @@
 const express = require('express')
-const morgan = require('morgan')
+//const morgan = require('morgan')
 const app = express()
 const cors = require('cors')
+require('dotenv').config()
+const Person = require('./models/person')
 
-app.use(express.json())
+
 //app.use(requestLogger)
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms :get_data'))
-app.use(cors())
+//app.use(morgan(':method :url :status :res[content-length] - :response-time ms :get_data'))
 app.use(express.static('build'))
+app.use(cors())
+app.use(express.json())
+//const mongoose = require('mongoose')
+//const Person = mongoose.model('Person', personSchema)
 
 const requestLogger = (request, response, next) => {
     console.log('Method:', request.method)
@@ -16,7 +21,8 @@ const requestLogger = (request, response, next) => {
     console.log('---')
     next()
 }
-
+app.use(requestLogger)
+/*
 morgan.token('get_data', function (req, res) {
 
     const body = req.body
@@ -26,33 +32,11 @@ morgan.token('get_data', function (req, res) {
     if (method === "POST") {
         return dataobject
     }
-})
-
-let persons = [
-    {
-        "name": "Arto Hellas",
-        "number": "040-123456",
-        "id": 1
-    },
-    {
-        "name": "Ada Lovelace",
-        "number": "39-44-5323523",
-        "id": 2
-    },
-    {
-        "name": "Dan Abramov",
-        "number": "12-43-234345",
-        "id": 3
-    },
-    {
-        "name": "Mary Poppendieck",
-        "number": "39-23-6423122",
-        "id": 4
-    }]
+}) 
 
 morgan.token('type', function (req, res) {
     return req.headers['content-type']
-})
+}) */
 
 
 app.get('/', (req, res) => {
@@ -61,7 +45,9 @@ app.get('/', (req, res) => {
 
 
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person.find({}).then(persons => {
+        res.json(persons)
+    })
 })
 
 const generateId = () => {
@@ -81,34 +67,44 @@ app.post('/api/persons', (req, res) => {
         })
     }
 
-    if (persons.find(person => person.name === req.body.name)) {
-        return res.status(400).json({
-            error: 'name must be unique'
-        })
-    }
+    /* if (persons.find(person => person.name === req.body.name)) {
+         return res.status(400).json({
+             error: 'name must be unique'
+         })
+     } */
 
-    const person = {
-        name: body.name,
-        number: body.number,
-        id: generateId(),
-    }
-    persons = persons.concat(person)
+    const name = body.name
+    const number = body.number
 
-    res.json(person)
+    const person = new Person({
+        name: name,
+        number: number,
+    })
+
+    /* persons = persons.concat(person) */
+
+    person.save().then(response => {
+        console.log(`added ${name} number ${number} to phonebook`)
+        res.json(response)
+        /*  mongoose.connection.close() */
+    })
 })
 
 
 app.get('/api/persons/:id', (req, res) => {
 
-    const id = Number(req.params.id)
-    const person = persons.find(person => person.id === id)
-
-    if (person) {
-        res.json(person.number)
-    } else {
-        res.status(404).end()
-    }
+    Person.findById(req.params.id).then(person => {
+        res.json(person)
+    })
 })
+
+
+/* if (person) {
+     res.json(person.number)
+ } else {
+     res.status(404).end()
+ }
+}) */
 
 app.delete('/api/persons/:id', (req, res) => {
 
@@ -117,7 +113,6 @@ app.delete('/api/persons/:id', (req, res) => {
 
     res.status(204).end()
 })
-
 
 
 app.get('/info', (req, res) => {
@@ -136,7 +131,7 @@ const unknownEndpoint = (request, response) => {
 }
 app.use(unknownEndpoint)
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
+  console.log(`Server running on port ${PORT}`)
 })
