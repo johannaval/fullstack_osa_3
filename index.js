@@ -1,15 +1,31 @@
-const express = require('express')
-const morgan = require('morgan')
-const app = express()
-const cors = require('cors')
 require('dotenv').config()
+const express = require('express')
 const Person = require('./models/person')
+const app = express()
+const morgan = require('morgan')
+const cors = require('cors')
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :get_data'))
 app.use(express.static('build'))
 app.use(cors())
 app.use(express.json())
 
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+        return response.status(400).send({
+            error: 'malformatted id'
+        })
+
+    } else if (error.name === 'ValidationError') {
+        return response.status(400).json({
+            error: error.message
+        })
+    }
+    next(error)
+}
 
 const requestLogger = (req, res, next) => {
     console.log('Method:', req.method)
@@ -62,15 +78,16 @@ app.post('/api/persons', (req, res, next) => {
         number: number,
     })
 
-    person.save()
-        .then(savedPerson => {
-            return savedPerson.toJSON()
-        })
+    person
+        .save()
+        .then(savedPerson => savedPerson.toJSON())
         .then(savedAndFormattedPerson => {
             res.json(savedAndFormattedPerson)
         })
         .catch(error => next(error))
-})
+}
+)
+
 
 app.put('/api/persons/:id', (req, res, next) => {
 
@@ -98,17 +115,24 @@ app.get('/api/persons/:id', (req, res, next) => {
                 res.status(404).end()
             }
         })
-        .catch(error => next(error))
+        .catch(error => {
+            next(error)
+        })
 })
 
 
-app.delete('/api/persons/:id', (req, res, next) => {
+app.delete('/api/persons/:id', (req, res, next) => { // täs oli next
+
+    console.log('no pääseekö ees tänne')
 
     Person.findByIdAndRemove(req.params.id)
-        .then(result => {
+        .then(() => {
             res.status(204).end()
+            console.log('käyttäjä poistettiin')
         })
         .catch(error => next(error))
+    console.log('käyttäjääää ei voitu poistaa')
+
 })
 
 app.get('/info', (req, res) => {
@@ -129,22 +153,6 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint)
 
-
-const errorHandler = (error, request, response, next) => {
-    console.error(error.message)
-
-    if (error.name === 'CastError') {
-        return response.status(400).send({
-            error: 'malformatted id'
-        })
-
-    } else if (error.name === 'ValidationError') {
-        return response.status(400).json({
-            error: error.message
-        })
-    }
-    next(error)
-}
 app.use(errorHandler)
 
 const PORT = process.env.PORT
