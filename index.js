@@ -14,6 +14,9 @@ app.use(express.json())
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
 
+
+    console.log(`VIRHEVIESTI ${error.message}`)
+    
     if (error.name === 'CastError') {
         return response.status(400).send({
             error: 'malformatted id'
@@ -75,7 +78,7 @@ app.post('/api/persons', (req, res, next) => {
 
     const person = new Person({
         name: name,
-        number: number,
+        number: number
     })
 
     person
@@ -97,7 +100,7 @@ app.put('/api/persons/:id', (req, res, next) => {
         name: body.name,
         number: body.number,
     }
-    Person.findByIdAndUpdate(req.params.id, person, { new: true })
+    Person.findByIdAndUpdate(req.params.id, person, { new: true, runValidators: true })
         .then(updatedPerson => {
             res.json(updatedPerson)
         })
@@ -110,7 +113,7 @@ app.get('/api/persons/:id', (req, res, next) => {
     Person.findById(req.params.id)
         .then(person => {
             if (person) {
-                res.json(person)
+                response.json(person)
             } else {
                 res.status(404).end()
             }
@@ -120,10 +123,12 @@ app.get('/api/persons/:id', (req, res, next) => {
         })
 })
 
+app.delete('/api/persons/:id', (req, res, next) => {
 
-app.delete('/api/persons/:id', (req, res, next) => { // täs oli next
+    console.log('positetaan käyttäjä')
+    console.log(req.params.name)
+    console.log(req.params.id)
 
-    console.log('no pääseekö ees tänne')
 
     Person.findByIdAndRemove(req.params.id)
         .then(() => {
