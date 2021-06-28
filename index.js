@@ -5,7 +5,6 @@ const cors = require('cors')
 require('dotenv').config()
 const Person = require('./models/person')
 
-app.use(requestLogger)
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :get_data'))
 app.use(express.static('build'))
 app.use(cors())
