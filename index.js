@@ -97,9 +97,11 @@ app.put('/api/persons/:id', (req, res, next) => {
     name: body.name,
     number: body.number,
   }
-  Person.findByIdAndUpdate(req.params.id, person, { new: true, runValidators: true })
-    .then(updatedPerson => {
-      res.json(updatedPerson)
+  Person
+    .findByIdAndUpdate(req.params.id, person, { new: true })
+    .then(updatedPerson => updatedPerson.toJSON())
+    .then(updatedAndFormattedPerson => {
+      res.json(updatedAndFormattedPerson)
     })
     .catch(error => next(error))
 })
@@ -123,12 +125,12 @@ app.get('/api/persons/:id', (req, res, next) => {
 app.delete('/api/persons/:id', (req, res, next) => {
 
   Person.findByIdAndRemove(req.params.id)
-    .then(() => {
+    .then((result) => {
       res.status(204).end()
-      console.log('käyttäjä poistettiin')
+      console.log(`käyttäjä ${result.name} poistettiin`)
     })
     .catch(error => next(error))
-  console.log('käyttäjääää ei voitu poistaa')
+  console.log('käyttäjää ei voitu poistaa')
 
 })
 
